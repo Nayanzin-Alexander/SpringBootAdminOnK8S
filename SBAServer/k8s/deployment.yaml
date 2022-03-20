@@ -1,0 +1,84 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sba-server
+  namespace: n-1
+automountServiceAccountToken: true
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: sba-server-services-pods-endpoints-reader
+  namespace: n-1
+rules:
+  - apiGroups: [""] # "" indicates the core API group
+    resources: ["services", "pods", "configmaps", "endpoints"]
+    verbs: ["get", "watch", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sba-server-services-pods-endpoints-reader
+  namespace: n-1
+subjects:
+  - kind: ServiceAccount
+    name: sba-server
+    namespace: n-1
+roleRef:
+  kind: Role
+  name: sba-server-services-pods-endpoints-reader
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin
+  namespace: n-1
+spec:
+  selector:
+    matchLabels:
+      app: admin
+  template:
+    metadata:
+      labels:
+        app: admin
+    spec:
+      serviceAccountName: sba-server
+      automountServiceAccountToken: true
+      containers:
+        - name: admin
+          image: sba-admin
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+---
+#kind: ConfigMap
+#apiVersion: v1
+#metadata:
+#  name: admin
+#  namespace: n-1
+#data:
+#  application.yml: |-
+#    spring:
+#      cloud:
+#        kubernetes:
+#          discovery:
+#            all-namespaces: true
+#            service-labels:
+#              sping-boot: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: admin
+  namespace: n-1
+  labels:
+    app: SBAServer
+    spring-boot: "true"
+spec:
+  type: NodePort
+  selector:
+    app: admin
+  ports:
+    - port: 8080
+      targetPort: 8080

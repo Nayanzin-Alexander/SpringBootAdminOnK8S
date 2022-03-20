@@ -1,0 +1,13 @@
+server.port: 8081
+spring:
+  application:
+    name: sba-client-1
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: ALWAYS
+greeting: "Hello World from application.yml"
